@@ -8,7 +8,8 @@ import {staffRouter} from "./Routes/staff.js"
 import {adminRouter} from "./Routes/admin.js"
 
 dotenv.config()
-const CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING
+const CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING;
+const port = 3001;
 
 const app = express();
 
@@ -21,4 +22,4 @@ app.use("/admin", adminRouter);
 
 mongoose.connect(CONNECTION_STRING)
 
-app.listen(3001, () => console.log("Yo! Server has started"));
+app.listen(port, "0.0.0.0", () => console.log(`Yo! Server has started at port ${port}`));

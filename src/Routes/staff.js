@@ -78,7 +78,7 @@ router.post("/topics", async (req, res) => {
             return res.json({message: "User not found"});
         }
         const topics = await TopicModel.find({createdBy: id});
-        return res.json(topics)
+        return res.json(topics?.reverse())
     } catch (e) {
         console.log(e)
     }
