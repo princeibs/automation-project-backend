@@ -7,6 +7,18 @@ import { StaffModel } from "../models/Staff.js";
 
 const router = express.Router()
 
+export const verifyToken = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (token) {
+        jwt.verify(token, "secret", (err) => {
+            if (err) return res.sendStatus(403);
+            next();
+        })
+    } else {
+        res.sendStatus(401)
+    }
+}
+
 router.post("/register", async (req, res) => {
     const {firstName, lastName, otherNames, matricNo, password} = req.body;
     const user = await StudentModel.findOne({ matricNo });
@@ -41,12 +53,12 @@ router.post("/login", async (req, res) => {
     res.json({token, userId: user._id, role: user.role})
 })
 
-router.post("/details", async (req, res) => {
+router.get("/details", verifyToken, async (req, res) => {
     try {
-        const {id} = req.body;
+        const id = req.headers.id;
         const user = await StudentModel.findById(id);
         if (!user) {
-            return res.json({message: "User not found"});
+            return res.status(404).json({message: "User not found"});
         }
         const {firstName, lastName, otherNames, matricNo, role, savedTopics} = user;
         return res.json({firstName, lastName, otherNames, matricNo, role, savedTopics});
@@ -55,9 +67,14 @@ router.post("/details", async (req, res) => {
     }
 })
 
-router.post("/search", async (req, res) => {
+router.get("/search", verifyToken, async (req, res) => {
     try {
-        const {specialization, expertise, tools, type} = req.body;
+        const {specialization, expertise, tools, type} = {
+            specialization: req.headers.specialization, 
+            expertise: req.headers.expertise, 
+            tools: req.headers.tools, 
+            type: req.headers.type
+        };
         var topics = await TopicModel.find()
 
         if (type == "inclusive") {
@@ -87,7 +104,7 @@ router.post("/search", async (req, res) => {
     }
 })
 
-router.post("/save", async (req, res) => {
+router.put("/save", verifyToken, async (req, res) => {
     try {
         const {userId, topicId} = req.body;
         const user = await StudentModel.findById(userId);
@@ -99,14 +116,14 @@ router.post("/save", async (req, res) => {
             return res.status(400).json({message: "Topic already saved"})
         } 
         user.savedTopics.push(topicId);
-        user.save();
+        await user.save();
         return res.json({message: "Saved successful"})
     } catch (error) {
         console.log(error)
     }
 })
 
-router.post("/unsave", async (req, res) => {
+router.put("/unsave", verifyToken, async (req, res) => {
     try {
         const {userId, topicId} = req.body;
         const user = await StudentModel.findById(userId);
@@ -119,16 +136,16 @@ router.post("/unsave", async (req, res) => {
         } 
         const topicIds = user.savedTopics.filter(topic => topic != topicId)
         user.savedTopics = topicIds;
-        user.save();
+        await user.save();
         return res.json({message: "Unsaved successful"})
     } catch (error) {
         console.log(error)
     }
 })
 
-router.post("/saved", async (req, res) => {
+router.get("/saved", verifyToken, async (req, res) => {
     try {
-        const {userId} = req.body;
+        const userId = req.headers.id;
         const user = await StudentModel.findById(userId);
         if (!user) {
             return res.status(404).json({message: "User not found"});
@@ -143,7 +160,7 @@ router.post("/saved", async (req, res) => {
 router.get("/topic/:id", async (req, res) => {
     try {
         const {id: topicId} = req.params;
-        const topic = await TopicModel.findById(topicId)
+        const topic = await TopicModel.findById(topicId);
         if (!topic) {
             return res.status(404).json({message: "Topic not found"});
         }
@@ -156,14 +173,3 @@ router.get("/topic/:id", async (req, res) => {
 
 export {router as studentRouter}
 
-export const verifyToken = (req, res, next) => {
-    const token = req.headers.authorization;
-    if (token) {
-        jwt.verify(token, "secret", (err) => {
-            if (err) return res.sendStatus(403);
-            next();
-        })
-    } else {
-        res.sendStatus(401)
-    }
-}

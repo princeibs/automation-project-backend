@@ -4,7 +4,19 @@ import bcrypt from "bcrypt";
 import {StaffModel} from "../models/Staff.js"
 import { TopicModel } from "../models/Topic.js";
 
-const router = express.Router()
+const router = express.Router();
+
+export const verifyToken = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (token) {
+        jwt.verify(token, "secret", (err) => {
+            if (err) return res.sendStatus(403);
+            next();
+        })
+    } else {
+        res.sendStatus(401).json({message: "Invalid token sent"})
+    }
+}
 
 router.post("/register", async (req, res) => {
     const {email, title, firstName, lastName, otherNames, image, password, qualifications, specialization} = req.body;
@@ -40,12 +52,12 @@ router.post("/login", async (req, res) => {
     res.json({token, userId: user._id, role: user.role})
 })
 
-router.post("/details", async (req, res) => {
+router.get("/details", verifyToken, async (req, res) => {
     try {
-        const {id} = req.body;
+        const id = req.headers.id;
         const user = await StaffModel.findById(id);
         if (!user) {
-            return res.json({message: "User not found"});
+            return res.status(404).json({message: "User not found"});
         }
         const {email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization} = user;
         return res.json({email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization});
@@ -54,9 +66,10 @@ router.post("/details", async (req, res) => {
     }
 })
 
-router.post("/add", async (req, res) => {
+router.post("/add", verifyToken, async (req, res) => {
     try {
-        const {userId, title, description, levelOfExpertise, tools} = req.body;
+        const {title, description, levelOfExpertise, tools} = req.body;
+        const userId = req.headers.id
         const user = await StaffModel.findById(userId);
         if (!user) {
             return res.status(401).json({message: "User details not found. Please log in again"});
@@ -70,9 +83,9 @@ router.post("/add", async (req, res) => {
     }
 })
 
-router.post("/topics", async (req, res) => {
+router.get("/topics", verifyToken, async (req, res) => {
     try {
-        const {id} = req.body;
+        const id = req.headers.id;
         const user = await StaffModel.findById(id);
         if (!user) {
             return res.json({message: "User not found"});
