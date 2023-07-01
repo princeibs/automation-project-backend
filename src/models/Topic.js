@@ -5,6 +5,7 @@ const TopicSchema = new mongoose.Schema({
     description: {type: String, required: true},
     expertise: {type: String, required: true},
     tools: [{type: String}],
+    categories: [{type: String}],
     createdBy: {type: mongoose.Schema.Types.ObjectId, ref: "staffs", required: true}
 })
 

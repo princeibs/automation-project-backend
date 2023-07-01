@@ -68,13 +68,13 @@ router.get("/details", verifyToken, async (req, res) => {
 
 router.post("/add", verifyToken, async (req, res) => {
     try {
-        const {title, description, levelOfExpertise, tools} = req.body;
+        const {title, description, levelOfExpertise, tools, categories} = req.body;
         const userId = req.headers.id
         const user = await StaffModel.findById(userId);
         if (!user) {
             return res.status(401).json({message: "User details not found. Please log in again"});
         }
-        const newTopic = await TopicModel({title, description, expertise: levelOfExpertise, tools, createdBy: user._id})
+        const newTopic = await TopicModel({title, description, expertise: levelOfExpertise, tools, categories, createdBy: user._id})
         await newTopic.save();
 
         return res.json({message: "Topic created successfully"})
