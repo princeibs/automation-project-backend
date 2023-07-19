@@ -97,4 +97,21 @@ router.get("/topics", verifyToken, async (req, res) => {
     }
 })
 
+router.put("/uploadImage", verifyToken, async(req, res) => {
+    try {
+        const {newImage} = req.body;
+        const id = req.headers.id;
+        const user = await StaffModel.findById(id);
+        if (!user) {
+            return res.json({message: "User not found"});
+        }
+        user.image = newImage;
+        await user.save();
+
+        return res.json({message: "Image upload successful"})
+    } catch (e) {
+        console.log(e)
+    }
+})
+
 export {router as staffRouter}
