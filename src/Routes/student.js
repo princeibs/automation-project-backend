@@ -75,7 +75,8 @@ router.get("/search", verifyToken, async (req, res) => {
             tools: req.headers.tools, 
             type: req.headers.type
         };
-        var topics = await TopicModel.find()
+        var topics = await TopicModel.find();
+        var staffs = await StaffModel.find();
 
         if (type == "broad") {
             topics = topics.filter(topic => {
@@ -110,6 +111,20 @@ router.get("/search", verifyToken, async (req, res) => {
                 }
             });
         }
+
+        // Include details of topic owner
+        topics = topics.map(topic => {
+            var staff = staffs.filter(staff => staff._id.equals(topic.createdBy))[0]
+            staff = {
+                _id: staff._id,
+                title: staff.title,
+                firstName: staff.firstName,
+                lastName: staff.lastName,
+                image: staff.image
+            }
+            // replace staff id with staff details
+            return {...topic._doc, createdBy: staff}
+        })
 
         return res.json(topics);
     } catch (error) {
