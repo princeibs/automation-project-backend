@@ -77,25 +77,38 @@ router.get("/search", verifyToken, async (req, res) => {
         };
         var topics = await TopicModel.find()
 
-        if (type == "inclusive") {
-            var t1 = [];
-            var t2 = [];
-            // Filter by expertise
-            if (expertise) {
-                t1 = topics.filter(topic => topic.expertise == expertise); 
-            }
-            // filter by tools 
-            if (tools) {
-                t2 = topics.filter(topic => String(topic.tools).split(",").filter(tool => tools.includes(tool.trim())).length > 0);
-            }
-            topics = t1.concat(t2)
+        if (type == "broad") {
+            topics = topics.filter(topic => {
+                if (
+                    // filter by expertise
+                    topic.expertise == expertise ||
+                    // filter by tools
+                    topic.tools.filter(tool => tools.includes(tool.trim())).length > 0 ||
+                    // filter by specialization
+                    topic.categories.includes(specialization.toString())
+                ) {
+                    return true
+                } else {
+                    return false
+                }
+            });
         } 
 
-        if (type == "exclusive") {
-            // filter by expertise
-            topics = topics.filter(topic => topic.expertise == expertise); 
-            // filter by tools
-            topics = topics.filter(topic => String(topic.tools).split(",").filter(tool => tools.includes(tool.trim())).length > 0);
+        if (type == "narrow") {
+            topics = topics.filter(topic => {
+                if (
+                    // filter by expertise
+                    topic.expertise == expertise &&
+                    // filter by tools
+                    topic.tools.filter(tool => tools.includes(tool.trim())).length > 0 &&
+                    // filter by specialization
+                    topic.categories.includes(specialization.toString())
+                ) {
+                    return true
+                } else {
+                    return false
+                }
+            });
         }
 
         return res.json(topics);
