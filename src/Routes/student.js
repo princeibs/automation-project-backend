@@ -199,5 +199,20 @@ router.get("/topic/:id", async (req, res) => {
     }
 })
 
+router.get("/staff-details/:id", async (req, res) => {
+    try {
+        const {id: staffId} = req.params;
+        const user = await StaffModel.findById(staffId);
+        if (!user) {
+            return res.status(404).json({message: "User not found"});
+        }
+
+        const {email, title, firstName, lastName, otherNames, image, qualifications, specialization} = user;
+        return res.json({email, title, firstName, lastName, otherNames, image, qualifications, specialization});
+    } catch (error) {
+        console.log(error)
+    }
+})
+
 export {router as studentRouter}
 
