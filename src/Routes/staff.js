@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt";
 import {StaffModel} from "../models/Staff.js"
 import { TopicModel } from "../models/Topic.js";
+import { StudentModel } from "../models/Student.js";
 
 const router = express.Router();
 
@@ -112,6 +113,27 @@ router.put("/uploadImage", verifyToken, async(req, res) => {
         await user.save();
 
         return res.json({message: "Image upload successful"})
+    } catch (e) {
+        console.log(e)
+    }
+})
+
+router.get("/students", verifyToken, async (req, res) => {
+    try {
+        const staffId = req.headers.id;
+        const user = await StaffModel.findById(staffId);
+        var students = await StudentModel.find();
+        const topics = await TopicModel.find();
+        if (!user) {
+            return res.json({message: "User not found"});
+        }
+        students = students.filter(student => student?.supervisor?.toString() === staffId.toString())
+        students = students.map(student => {
+            const topic = topics.filter(topic => topic._id.toString() === student.selectedTopic.toString())[0]
+            // TODO: Restrict to return only necessary data like name, title, desctiption, etc only
+            return {...student._doc, ...topic._doc}
+        })
+        return res.json(students)
     } catch (e) {
         console.log(e)
     }
