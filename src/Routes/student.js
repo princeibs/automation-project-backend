@@ -212,8 +212,8 @@ router.get("/staff-details/:id", async (req, res) => {
             if (student?.supervisor?.toString() === staffId.toString()) slotsOccupied++
         })
 
-        const {email, title, firstName, lastName, otherNames, image, qualifications, specialization} = user;
-        return res.json({email, title, firstName, lastName, otherNames, image, qualifications, specialization, slotsOccupied});
+        const {email, title, firstName, lastName, otherNames, image, qualifications, specialization, publishedDocuments} = user;
+        return res.json({email, title, firstName, lastName, otherNames, image, qualifications, specialization, slotsOccupied, publishedDocuments});
     } catch (error) {
         console.log(error)
     }

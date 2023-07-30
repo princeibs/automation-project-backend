@@ -60,8 +60,8 @@ router.get("/details", verifyToken, async (req, res) => {
         if (!user) {
             return res.status(404).json({message: "User not found"});
         }
-        const {email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization} = user;
-        return res.json({email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization});
+        const {email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization, publishedDocuments} = user;
+        return res.json({email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization, publishedDocuments});
     } catch (error) {
         console.log(error);
     }
@@ -137,6 +137,33 @@ router.get("/students", verifyToken, async (req, res) => {
     } catch (e) {
         console.log(e)
     }
+})
+
+router.put("/update-profile", verifyToken, async (req, res) => {
+    const {email, title, firstName, lastName, otherNames, qualifications, publishedDocuments} = req.body;
+    const staffId = req.headers.id
+    const staff = await StaffModel.findById(staffId);
+
+    if (!staff) {
+        return res.status(400).json({message: "Profile does not exist!"});
+    }
+
+    const isValid = email && firstName && lastName && title && qualifications
+
+    if (!isValid) {
+        return res.status(400).json({message: "Please make sure all details are valid"})
+    }
+
+    staff.firstName = firstName;
+    staff.lastName = lastName;
+    staff.title = title;
+    staff.otherNames = otherNames;
+    staff.qualifications = qualifications;
+    staff.publishedDocuments = publishedDocuments
+    staff.email = email
+    await staff.save();
+
+    res.json({message: "Profile updated successfully"})
 })
 
 export {router as staffRouter}
