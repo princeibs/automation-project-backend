@@ -60,8 +60,8 @@ router.get("/details", verifyToken, async (req, res) => {
         if (!user) {
             return res.status(404).json({message: "User not found"});
         }
-        const {firstName, lastName, otherNames, matricNo, role, savedTopics} = user;
-        return res.json({firstName, lastName, otherNames, matricNo, role, savedTopics});
+        const {firstName, lastName, otherNames, matricNo, role, savedTopics, selectedTopic, supervisor} = user;
+        return res.json({firstName, lastName, otherNames, matricNo, role, savedTopics, selectedTopic, supervisor});
     } catch (error) {
         console.log(error)
     }
@@ -203,12 +203,52 @@ router.get("/staff-details/:id", async (req, res) => {
     try {
         const {id: staffId} = req.params;
         const user = await StaffModel.findById(staffId);
+        const students = await StudentModel.find();
         if (!user) {
             return res.status(404).json({message: "User not found"});
         }
+        var slotsOccupied = 0
+        students.forEach(student => {
+            if (student?.supervisor?.toString() === staffId.toString()) slotsOccupied++
+        })
 
         const {email, title, firstName, lastName, otherNames, image, qualifications, specialization} = user;
-        return res.json({email, title, firstName, lastName, otherNames, image, qualifications, specialization});
+        return res.json({email, title, firstName, lastName, otherNames, image, qualifications, specialization, slotsOccupied});
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+router.post("/select-topic", verifyToken, async (req, res) => {
+    try {
+        const {userId, topicId, topicCreator} = req.body;
+        const user = await StudentModel.findById(userId);
+        const topic = await TopicModel.findById(topicId);
+        const staff = await StaffModel.findById(topicCreator)
+        if (!user || !topic || !staff) {
+            return res.status(404).json({message: "User or Topic or Staff not found"});
+        }
+        user.selectedTopic = topicId;
+        user.supervisor = topicCreator
+        await user.save();
+        return res.json({message: "Select topic successful"})
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+router.post("/unselect-topic", verifyToken, async (req, res) => {
+    try {
+        const {userId, topicId} = req.body;
+        const user = await StudentModel.findById(userId);
+        const topic = await TopicModel.findById(topicId);
+        if (!user || !topic) {
+            return res.status(404).json({message: "User or Topic not found"});
+        }
+        user.selectedTopic = null;
+        user.supervisor = null
+        await user.save();
+        return res.json({message: "Unselect topic successful"})
     } catch (error) {
         console.log(error)
     }

@@ -7,7 +7,9 @@ const StudentSchema = new mongoose.Schema({
     otherNames: {type: String},
     role: {type: String},
     password: {type: String, required: true},
-    savedTopics: [{type: mongoose.Schema.Types.ObjectId, ref: "topics"}]
+    savedTopics: [{type: mongoose.Schema.Types.ObjectId, ref: "topics"}],
+    selectedTopic: {type: mongoose.Schema.Types.ObjectId, ref: "topics"},
+    supervisor: {type: mongoose.Schema.Types.ObjectId, ref: "staff"}
 })
 
 export const StudentModel = mongoose.model("students", StudentSchema)
