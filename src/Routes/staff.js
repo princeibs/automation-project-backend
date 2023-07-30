@@ -90,7 +90,10 @@ router.get("/topics", verifyToken, async (req, res) => {
         if (!user) {
             return res.json({message: "User not found"});
         }
-        const topics = await TopicModel.find({createdBy: id});
+        var topics = await TopicModel.find({createdBy: id});
+        topics = topics.map(topic => {
+            return {...topic._doc, createdAt: topic._id.getTimestamp()}
+        })
         return res.json(topics?.reverse())
     } catch (e) {
         console.log(e)
