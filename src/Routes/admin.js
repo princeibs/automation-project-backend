@@ -71,7 +71,7 @@ router.get("/details", verifyToken, async (req, res) => {
     }
 })
 
-router.get("/students", async (req, res) => {
+router.get("/students", verifyToken, async (req, res) => {
     try {
         const adminId = req.headers.id;
         const user = await AdminModel.findById(adminId);
@@ -92,6 +92,51 @@ router.get("/students", async (req, res) => {
             return {...student._doc, supervisor: {...supervisor?._doc}, topic: {...topic?._doc}}
         })
         return res.json(students)
+    } catch (e) {
+        console.log(e)
+    }
+})
+
+router.get("/supervisors", verifyToken, async (req, res) => {
+    try {
+        const adminId = req.headers.id;
+        const user = await AdminModel.findById(adminId);
+        const students = await StudentModel.find();
+        var supervisors = await StaffModel.find();
+        
+        if (!user) {
+            return res.json({message: "User not found"});
+        }
+        supervisors = supervisors.map(supervisor => {
+            var studentsCount = 0;
+            students.forEach(student => {
+                if (student?.supervisor?.toString() === supervisor._id.toString()) studentsCount++
+            })
+            return {...supervisor._doc, students: studentsCount}
+        })
+        return res.json(supervisors)
+    } catch (e) {
+        console.log(e)
+    }
+})
+
+router.get("/supervisor-details/:id", async (req, res) => {
+    try {
+        const staffId = req.params.id
+        // const adminId = req.headers.id;
+        // const user = await AdminModel.findById(adminId);
+        const students = await StudentModel.find();
+        const topics = await TopicModel.find();
+        var supervisor = await StaffModel.findById(staffId);
+        
+        if (!supervisor) {
+            return res.json({message: "Supervisor not found"});
+        }
+
+        const allocatedStudents = students.filter(student => student?.supervisor?.toString() === supervisor._id.toString());
+        const createdTopics = topics.filter(topic => topic.createdBy.toString() === supervisor._id.toString())
+ 
+        return res.json({...supervisor._doc, students: allocatedStudents, topics: createdTopics})
     } catch (e) {
         console.log(e)
     }
