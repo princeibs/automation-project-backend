@@ -49,6 +49,8 @@ router.post("/login", async (req, res) => {
         return res.status(401).json({message: "Email or password is incorrect!"});
     }
 
+    user.lastLogin = Date.now();
+    user.save()
     const token = jwt.sign({id: user._id}, "secret");
     res.json({token, userId: user._id, role: user.role})
 })
@@ -60,8 +62,8 @@ router.get("/details", verifyToken, async (req, res) => {
         if (!user) {
             return res.status(404).json({message: "User not found"});
         }
-        const {email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization, publishedDocuments} = user;
-        return res.json({email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization, publishedDocuments});
+        const {email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization, publishedDocuments, lastLogin} = user;
+        return res.json({email, title, firstName, lastName, otherNames, image, role, password, qualifications, specialization, publishedDocuments, lastLogin});
     } catch (error) {
         console.log(error);
     }

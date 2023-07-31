@@ -12,7 +12,8 @@ const StaffSchema = new mongoose.Schema({
     qualifications: {type: String, required: true},
     topcis: [{type: mongoose.Schema.Types.ObjectId, ref: "topics"}],
     specialization: [{type: String}],
-    publishedDocuments: {type: String}
+    publishedDocuments: {type: String},
+    lastLogin: {type: Date}
 })
 
 export const StaffModel = mongoose.model("staffs", StaffSchema)
