@@ -7,6 +7,7 @@ import { StaffModel } from "../models/Staff.js";
 
 const router = express.Router()
 
+// Verify the authentication token sent to the current user
 export const verifyToken = (req, res, next) => {
     const token = req.headers.authorization;
     if (token) {
@@ -19,6 +20,7 @@ export const verifyToken = (req, res, next) => {
     }
 }
 
+// Register student
 router.post("/register", async (req, res) => {
     const {firstName, lastName, otherNames, matricNo, password} = req.body;
     const user = await StudentModel.findOne({ matricNo });
@@ -35,6 +37,7 @@ router.post("/register", async (req, res) => {
     res.json({message: "User registered successfully"})
 })
 
+// Log in student
 router.post("/login", async (req, res) => {
     const {matricNo, password} = req.body;
     const user = await StudentModel.findOne({ matricNo });
@@ -49,10 +52,12 @@ router.post("/login", async (req, res) => {
         return res.status(401).json({message: "Matric Number or Password is incorrect!"});
     }
 
+    // Geenerate token using user ID
     const token = jwt.sign({id: user._id}, "secret");
     res.json({token, userId: user._id, role: user.role})
 })
 
+// Get student details
 router.get("/details", verifyToken, async (req, res) => {
     try {
         const id = req.headers.id;
@@ -67,6 +72,7 @@ router.get("/details", verifyToken, async (req, res) => {
     }
 })
 
+// Student search for topic 
 router.get("/search", verifyToken, async (req, res) => {
     try {
         const {specialization, expertise, tools, type} = {
@@ -75,9 +81,14 @@ router.get("/search", verifyToken, async (req, res) => {
             tools: req.headers.tools, 
             type: req.headers.type
         };
+        // Get all topics in database
         var topics = await TopicModel.find();
+        // Get all staffs in database
         var staffs = await StaffModel.find();
 
+        // Broad search
+        // This will add a topic to the array of topics to be returned if it
+        // matches at least one of the search parameter
         if (type == "broad") {
             topics = topics.filter(topic => {
                 if (
@@ -95,6 +106,9 @@ router.get("/search", verifyToken, async (req, res) => {
             });
         } 
 
+        // Narrow Search
+        // This will add a topic to array of topics ot be returned ONLY if it 
+        // matches all the search parameters
         if (type == "narrow") {
             topics = topics.filter(topic => {
                 if (
@@ -112,7 +126,7 @@ router.get("/search", verifyToken, async (req, res) => {
             });
         }
 
-        // Include details of topic owner
+        // Include details of staff who created the topic
         topics = topics.map(topic => {
             var staff = staffs.filter(staff => staff._id.equals(topic.createdBy))[0]
             staff = {
@@ -132,6 +146,7 @@ router.get("/search", verifyToken, async (req, res) => {
     }
 })
 
+// Save topic 
 router.put("/save", verifyToken, async (req, res) => {
     try {
         const {userId, topicId} = req.body;
@@ -151,6 +166,7 @@ router.put("/save", verifyToken, async (req, res) => {
     }
 })
 
+// Unsave topic
 router.put("/unsave", verifyToken, async (req, res) => {
     try {
         const {userId, topicId} = req.body;
@@ -171,6 +187,7 @@ router.put("/unsave", verifyToken, async (req, res) => {
     }
 })
 
+// Get previously saved topics
 router.get("/saved", verifyToken, async (req, res) => {
     try {
         const userId = req.headers.id;
@@ -185,6 +202,7 @@ router.get("/saved", verifyToken, async (req, res) => {
     }
 })
 
+// Get details of topic with identity of the user along with thr details 
 router.get("/topic/:id", async (req, res) => {
     try {
         const {id: topicId} = req.params;
@@ -199,15 +217,20 @@ router.get("/topic/:id", async (req, res) => {
     }
 })
 
+// Get public details of staff using their id
 router.get("/staff-details/:id", async (req, res) => {
     try {
         const {id: staffId} = req.params;
         const user = await StaffModel.findById(staffId);
         const students = await StudentModel.find();
+        
         if (!user) {
             return res.status(404).json({message: "User not found"});
         }
+        // Number of students under this supervisor
         var slotsOccupied = 0
+        // If any student has the supervisor details in their profile, then
+        // increment the students count of the supervisor
         students.forEach(student => {
             if (student?.supervisor?.toString() === staffId.toString()) slotsOccupied++
         })
@@ -219,6 +242,7 @@ router.get("/staff-details/:id", async (req, res) => {
     }
 })
 
+// Select a topic
 router.post("/select-topic", verifyToken, async (req, res) => {
     try {
         const {userId, topicId, topicCreator} = req.body;
@@ -228,8 +252,11 @@ router.post("/select-topic", verifyToken, async (req, res) => {
         if (!user || !topic || !staff) {
             return res.status(404).json({message: "User or Topic or Staff not found"});
         }
+        // Update selected topic of student with the selected topic id
         user.selectedTopic = topicId;
+        // Update student supervisor with id of staff who created the topic
         user.supervisor = topicCreator
+        // Save the updated data to the database
         await user.save();
         return res.json({message: "Select topic successful"})
     } catch (error) {
@@ -237,6 +264,7 @@ router.post("/select-topic", verifyToken, async (req, res) => {
     }
 })
 
+// Unselect a topic and supervisor
 router.post("/unselect-topic", verifyToken, async (req, res) => {
     try {
         const {userId, topicId} = req.body;

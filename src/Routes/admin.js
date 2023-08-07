@@ -8,6 +8,7 @@ import { StudentModel } from "../models/Student.js";
 
 const router = express.Router()
 
+// Verify the authentication token sent to the current user
 export const verifyToken = (req, res, next) => {
     const token = req.headers.authorization;
     if (token) {
@@ -20,7 +21,7 @@ export const verifyToken = (req, res, next) => {
     }
 }
 
-
+// Register  the admin into the platform
 router.post("/register", async (req, res) => {
     const {username, password} = req.body;
     const user = await AdminModel.findOne({username})
@@ -37,6 +38,7 @@ router.post("/register", async (req, res) => {
     res.json({message: "Registration successful"})
 })
 
+// Log in the admin into the platform
 router.post("/login", async (req, res) => {
     const {username, password} = req.body;
     const user = await AdminModel.findOne({ username });
@@ -57,6 +59,7 @@ router.post("/login", async (req, res) => {
     res.json({token, userId: user._id, role: user.role})
 })
 
+// Get the details of the admin and send it upon request
 router.get("/details", verifyToken, async (req, res) => {
     try {
         const id = req.headers.id;
@@ -71,6 +74,7 @@ router.get("/details", verifyToken, async (req, res) => {
     }
 })
 
+// Get the details of registered student in the platform
 router.get("/students", verifyToken, async (req, res) => {
     try {
         const adminId = req.headers.id;
@@ -85,8 +89,11 @@ router.get("/students", verifyToken, async (req, res) => {
         students = students.map(student => {
             var supervisor;
             var topic;
+            // if student has a supervisor and has selected topic
             if (student.supervisor && student.selectedTopic) {
+                // Get student suepervisor details
                 supervisor = staffs.filter(staff => staff._id.toString() === student.supervisor.toString())[0];
+                // Get student topic details
                 topic = topics.filter(topic => topic._id.toString() === student.selectedTopic.toString())[0];
             }
             return {...student._doc, supervisor: {...supervisor?._doc}, topic: {...topic?._doc}}
@@ -97,6 +104,7 @@ router.get("/students", verifyToken, async (req, res) => {
     }
 })
 
+// Get list of all supervisors on the platform
 router.get("/supervisors", verifyToken, async (req, res) => {
     try {
         const adminId = req.headers.id;
@@ -109,7 +117,9 @@ router.get("/supervisors", verifyToken, async (req, res) => {
         }
         supervisors = supervisors.map(supervisor => {
             var studentsCount = 0;
+            // If supervisor id is found in a student profile
             students.forEach(student => {
+                // Increment the student count of the supervisor returned to the frontend
                 if (student?.supervisor?.toString() === supervisor._id.toString()) studentsCount++
             })
             return {...supervisor._doc, students: studentsCount}
@@ -120,6 +130,7 @@ router.get("/supervisors", verifyToken, async (req, res) => {
     }
 })
 
+// Get details of a specific supervisor with id
 router.get("/supervisor-details/:id", async (req, res) => {
     try {
         const staffId = req.params.id
@@ -133,7 +144,10 @@ router.get("/supervisor-details/:id", async (req, res) => {
             return res.json({message: "Supervisor not found"});
         }
 
+
+        // All students that have selected this supervisor's topic
         const allocatedStudents = students.filter(student => student?.supervisor?.toString() === supervisor._id.toString());
+        // All topics the supervisor has created
         const createdTopics = topics.filter(topic => topic.createdBy.toString() === supervisor._id.toString())
  
         return res.json({...supervisor._doc, students: allocatedStudents, topics: createdTopics})

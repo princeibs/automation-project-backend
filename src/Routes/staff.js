@@ -7,6 +7,7 @@ import { StudentModel } from "../models/Student.js";
 
 const router = express.Router();
 
+// Verify the authentication token sent to the current user
 export const verifyToken = (req, res, next) => {
     const token = req.headers.authorization;
     if (token) {
@@ -19,6 +20,7 @@ export const verifyToken = (req, res, next) => {
     }
 }
 
+// Register staff in the platform
 router.post("/register", async (req, res) => {
     const {email, title, firstName, lastName, otherNames, image, password, qualifications, specialization} = req.body;
     const user = await StaffModel.findOne({ email });
@@ -35,6 +37,7 @@ router.post("/register", async (req, res) => {
     res.json({message: "User registered successfully"})
 })
 
+// Log in staff into the platform
 router.post("/login", async (req, res) => {
     const {email, password} = req.body;
     const user = await StaffModel.findOne({ email });
@@ -55,6 +58,7 @@ router.post("/login", async (req, res) => {
     res.json({token, userId: user._id, role: user.role})
 })
 
+// Get details of logged in staff
 router.get("/details", verifyToken, async (req, res) => {
     try {
         const id = req.headers.id;
@@ -69,6 +73,7 @@ router.get("/details", verifyToken, async (req, res) => {
     }
 })
 
+// Staff adds a new topic to the database
 router.post("/add", verifyToken, async (req, res) => {
     try {
         const {title, description, levelOfExpertise, tools, categories} = req.body;
@@ -86,6 +91,7 @@ router.post("/add", verifyToken, async (req, res) => {
     }
 })
 
+// Get all topics added by the currently logged in staff
 router.get("/topics", verifyToken, async (req, res) => {
     try {
         const id = req.headers.id;
@@ -103,6 +109,7 @@ router.get("/topics", verifyToken, async (req, res) => {
     }
 })
 
+// Staff upload profile image
 router.put("/uploadImage", verifyToken, async(req, res) => {
     try {
         const {newImage} = req.body;
@@ -120,6 +127,7 @@ router.put("/uploadImage", verifyToken, async(req, res) => {
     }
 })
 
+// Get all the students under the supervision of a staff
 router.get("/students", verifyToken, async (req, res) => {
     try {
         const staffId = req.headers.id;
@@ -129,7 +137,10 @@ router.get("/students", verifyToken, async (req, res) => {
         if (!user) {
             return res.json({message: "User not found"});
         }
+        
+        // Filter students with supervisor details in their profile
         students = students.filter(student => student?.supervisor?.toString() === staffId.toString())
+        // Add topic detials to the student data returned
         students = students.map(student => {
             const topic = topics.filter(topic => topic._id.toString() === student.selectedTopic.toString())[0]
             // TODO: Restrict to return only necessary data like name, title, desctiption, etc only
@@ -141,6 +152,7 @@ router.get("/students", verifyToken, async (req, res) => {
     }
 })
 
+// Staff update profile
 router.put("/update-profile", verifyToken, async (req, res) => {
     const {email, title, firstName, lastName, otherNames, qualifications, publishedDocuments} = req.body;
     const staffId = req.headers.id
